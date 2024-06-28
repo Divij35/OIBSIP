@@ -37,6 +37,15 @@ def generate_password():
     except ValueError as e:
         messagebox.showerror("Error", str(e))
 
+def copy():
+    copied_password = entry_password.get()
+    if copied_password:
+        root.clipboard_clear()
+        root.clipboard_append(copied_password)
+        messagebox.showinfo('copied!!!','Password has been successful copied to the clipboard!!!')
+    else:
+        messagebox.showerror('Error','No password was found')
+
 # Creating the main window
 root = ttk.Window(themename='simplex')
 root.title("Password Generator")
