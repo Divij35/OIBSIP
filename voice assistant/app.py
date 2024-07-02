@@ -4,6 +4,11 @@ from transformers import pipeline
 from datetime import datetime
 import webbrowser as wb
 import os
+import requests
+import asyncio
+from secreats import WEATHER_KEY
+# from dotenv import load_dotenv
+# load_dotenv()
 
 recognizer = sr.Recognizer()
 
@@ -76,13 +81,32 @@ def answer_question(query):
     result = nlp(question=query, context=context)
     return result['answer']
 
-def handle_query(query):
+async def get_weather(city):
+    # api_key = os.getenv("WEATHER_KEY")   # enivronment variable was not used as the run time was slow
+    api_key = WEATHER_KEY
+    base_url = "http://api.openweathermap.org/data/2.5/weather?"
+    complete_url = base_url + "q=" + city + "&appid=" + api_key
+    response = requests.get(complete_url)
+    if response.status_code == 200:
+        data = response.json()
+        main = data['main']
+        weather_description = data['weather'][0]['description']
+        temperature = main['temp']
+        temperature_celsius = temperature - 273.15
+        return f"The temperature in {city} is {temperature_celsius:.2f}°C with {weather_description}."
+    else:
+        return "Sorry, I couldn't fetch the weather information."
+    
+async def handle_query(query):
     if not query:
         return 'Please repeat the question I did not get it?'
     if 'hello' in query or 'hi' in query or 'namaste' in query:
         return greeting()
-    elif 'time' in query:
+    elif 'what is the time' in query:
         return tell_time()
+    elif query.startswith('weather in'):
+        city = query.split('in ')[1].strip()
+        return await get_weather(city)
     elif 'search' in query:
         return wb.open(query)
     elif query.startswith('read'):
@@ -91,12 +115,14 @@ def handle_query(query):
         return create_file(query.split(' ')[1])
     else:
         return answer_question(query)
-
-if __name__ == "__main__":
+    
+async def main():
     while True:
         query = listen().lower()
         if 'exit' in query or 'stop' in query or 'thank you' in query:
             speak("Have a great day, Goodbye!")
             break
-        response = handle_query(query)
+        response = await handle_query(query)
         speak(response)
+if __name__ == "__main__":
+    asyncio.run(main())

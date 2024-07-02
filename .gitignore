@@ -1,1 +1,4 @@
 venv
+.env
+secreats.py
+__pycache__
